@@ -20,7 +20,16 @@ def display_im(im):
 
 def get_patch(i,j,h,im):
     #return a patch of size h centered on i,j from a matrice im 
-    return im[(i-h//2):(i+h//2), (j-h//2):(j+h//2)]
+    
+    #print("i : ", i)
+    #print("j : ", j)
+    #print("h : ", h)
+    #print("De ", (i-h//2), " à ", i+h//2)
+    if(h%2 == 0):
+        print("toto")
+        return im[(i-h//2):(i+h//2), (j-h//2):(j+h//2)]
+    else:
+        return im[(i-h//2):(i+h//2)+1, (j-h//2):(j+h//2)+1]
 
 def convert_patch_into_vectors(patch):
     pass
