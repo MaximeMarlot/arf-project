@@ -17,9 +17,10 @@ def display_im(im):
     plt.figure(figsize=(12, 8))
     plt.imshow(im)
     plt.show
-    
 
 def get_patch(i,j,h,im):
+    #todo: gérer les bords, actuellement renvoi rien pour un bord
+    
     #return a patch of size h centered on i,j from a matrice im 
     
     #print("i : ", i)
@@ -27,7 +28,6 @@ def get_patch(i,j,h,im):
     #print("h : ", h)
     #print("De ", (i-h//2), " à ", i+h//2)
     if(h%2 == 0):
-        print("toto")
         return im[(i-h//2):(i+h//2), (j-h//2):(j+h//2)]
     else:
         return im[(i-h//2):(i+h//2)+1, (j-h//2):(j+h//2)+1]
@@ -35,15 +35,21 @@ def get_patch(i,j,h,im):
 def convert_patch_into_vectors(patch):
     pass
 
-def noise(img,prc):
+def flatpixel_to_2d(flatpixel, width): 
+    x = flatpixel%width
+    y = int((flatpixel - (flatpixel%width))/width)
+    return (x,y)
+    
+#return flatimg and pixels of noise_pixels in 2d
+def noise(img,prc,width,height):
     #Noise a prc percent of the image img 
     flatimg = img.reshape(-1, img.shape[-1])
     randnoise = random.sample(range(0, len(flatimg)), int(len(flatimg)*prc))
     for i in randnoise:
         flatimg[i] = np.array([0,0,0])
-    return flatimg.reshape([img.shape[0], img.shape[1], 3])      
-    
+    return (flatimg.reshape([img.shape[0], img.shape[1], 3]), np.array([flatpixel_to_2d(x,width) for x in randnoise]))
 
+    
 def delete_rect(img,i,j,height, width):
     #Delete a rectangle of an image centered on i, j and size height and width
     img[(i-height//2):(i+height//2), (j-width//2):(j+width//2)] = np.zeros((height, width, 3))
