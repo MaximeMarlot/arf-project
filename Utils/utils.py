@@ -17,6 +17,7 @@ def display_im(im):
     plt.figure(figsize=(12, 8))
     plt.imshow(im)
     plt.show
+    
 
 def get_patch(i,j,h,im):
     #return a patch of size h centered on i,j from a matrice im 
