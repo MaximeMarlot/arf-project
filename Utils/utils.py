@@ -41,7 +41,7 @@ def flatpixel_to_2d(flatpixel, width):
     return (x,y)
     
 #return flatimg and pixels of noise_pixels in 2d
-def noise(img,prc,width,height):
+def noise(img,prc,width,height, h):
     #Noise a prc percent of the image img 
     flatimg = img.reshape(-1, img.shape[-1])
     randnoise = random.sample(range(0, len(flatimg)), int(len(flatimg)*prc))
