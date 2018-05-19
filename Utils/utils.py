@@ -32,24 +32,6 @@ def get_patch(i,j,h,im):
     else:
         return im[(i-h//2):(i+h//2)+1, (j-h//2):(j+h//2)+1]
     
-#fonction qui gère les bordures (auquel cas les patchs ne sont pas centrés)
-def get_noisy_patch(i,j,h,im):
-    width = im.shape[0]
-    height = im.shape[1]
-    
-    #todo gérer coins
-    
-    #bordure gauche
-        
-    #bordure droite
-    
-    #bordure haute
-    
-    #bordure bas
-        
-    #point normal
-    return get_patch(i,j,h,im)
-    
 
 def convert_patch_into_vectors(patch):
     pass
@@ -64,6 +46,7 @@ def flatpixel_to_2d(flatpixel, width):
 def noise(img,prc,width,height, h):
     #Noise a prc percent of the image img 
     flatimg = img.reshape(-1, img.shape[-1])
+    flatimg = np.asarray(flatimg)
     randnoise = random.sample(range(0, len(flatimg)), int(len(flatimg)*prc))
     noised_pixels = []
     for pixeli in randnoise:
@@ -71,8 +54,8 @@ def noise(img,prc,width,height, h):
         #test si c'est sur un bord on fait rien
         if((i-h >= 0) and (j-h >= 0) and (i+h+1 <= width) and (j+h+1 <= height)):
             #sinon on met du noise
-            flatimg[pixeli] = np.array([0,0,0])  #noir
-            #flatimg[pixeli] = np.array([255,255,255]) #blanc
+            flatimg[pixeli] = np.array([-1,-1,-1])  #pixel bruité
+            print("> ",flatimg[pixeli])
             noised_pixels.append(flatpixel_to_2d(pixeli,width))
         else:
             print("pixel ", i, " ",j, "=(",pixeli,") is on border")
@@ -85,12 +68,22 @@ def delete_rect(img,i,j, width, height):
     img[(i-height//2):(i+height//2), (j-width//2):(j+width//2)] = np.zeros((height, width, 3))
     return img
 
-def check_if_noisy_patch(patch):
-    #Check if there is at least a noisy pixel in a patch
-    for x in patch:
-        for y in x:
-            if(np.array_equal(y, np.array([0, 0, 0]))):
-                return True
+def get_centered_pixel(patch, h):
+    patch2 = patch.flatten()
+    #print("patch shape:", patch2.shape)
+    #print("len(patch) : ", len(patch2))
+    #print("centre = ", (len(patch2)//2)-1)
+    #Convert one patch into a column vector for training
+    vector = patch2[((len(patch2)//2)-1):((len(patch2)//2)-1)+3]
+    return [int(x) for x in vector]
+
+#testé ok
+def check_if_noisy_patch(patch, h):
+    centerpixel = get_centered_pixel(patch, h) 
+    #print("centerpixel = ", centerpixel)
+    #Check if center pixel is noisy in a patch
+    if(np.array_equal(centerpixel, np.array([-1,-1,-1]))):
+        return True
     return False
 
 #version quadrillage
@@ -102,7 +95,7 @@ def get_patches(img, h, width, height):
     for i_height in range(h//2, height-h//2,h):
         for j_width in range(h//2, width-h//2,h):
             patch = get_patch(i_height, j_width, h, img)
-            if(check_if_noisy_patch(patch)):
+            if(check_if_noisy_patch(patch,h)):
                 noisy_patches.append(patch)
             else:
                 clean_patches.append(patch)
@@ -118,7 +111,8 @@ def get_all_patches(img, h,width, height):
     for i_height in range(h//2, height-h//2):
         for j_width in range(h//2, width-h//2):
             patch = get_patch(i_height, j_width, h, img)
-            if(check_if_noisy_patch(patch)):
+            if(check_if_noisy_patch(patch,h)):
+                print("NOISYYYY")
                 noisy_patches.append(patch)
             else:
                 clean_patches.append(patch)
