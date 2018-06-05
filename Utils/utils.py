@@ -71,12 +71,15 @@ def noise(img_,prc,width,height, h):
     
 def delete_rect(img,i,j, width, height):
     #Delete a rectangle of an image centered on i, j and size height and width
-    img[(i-height//2):(i+height//2)+1, (j-width//2):(j+width//2)+1] = np.zeros((height, width, 3))
+    #img[(i-height//2):(i+height//2)+1, (j-width//2):(j+width//2)+1] = np.zeros((height, width, 3))
     #todo optimiser sans boucles
     deletepixels = []
     for pixeli in range((i-height//2), (i+height//2)+1):
+        tmp = []
         for pixelj in range((j-width//2), (j+width//2)+1):
-            deletepixels.append([pixeli, pixelj])
+            img[pixeli, pixelj] = np.array([-1,-1,-1])
+            tmp.append([pixeli, pixelj])
+        deletepixels.append(tmp)
     
     return (img, deletepixels)
 
