@@ -68,8 +68,22 @@ def noise(img_,prc,width,height, h):
             pass
     return (flatimg.reshape([img.shape[0], img.shape[1], 3]), np.array(noised_pixels))
 
-    
+# i,j = first pixel (top left corner)
 def delete_rect(img,i,j, width, height):
+    #Delete a rectangle of an image centered on i, j and size height and width
+    #img[(i-height//2):(i+height//2)+1, (j-width//2):(j+width//2)+1] = np.zeros((height, width, 3))
+    #todo optimiser sans boucles
+    deletepixels = []
+    for pixeli in range(i, i+height):
+        tmp = []
+        for pixelj in range(j, j+width):
+            img[pixeli, pixelj] = np.array([-1,-1,-1])
+            tmp.append([pixeli, pixelj])
+        deletepixels.append(tmp)
+    return (img, deletepixels)
+    
+#i,j = centerpixel but maybe bugs ?
+def delete_rect_centered(img,i,j, width, height):
     #Delete a rectangle of an image centered on i, j and size height and width
     #img[(i-height//2):(i+height//2)+1, (j-width//2):(j+width//2)+1] = np.zeros((height, width, 3))
     #todo optimiser sans boucles
@@ -80,10 +94,17 @@ def delete_rect(img,i,j, width, height):
             img[pixeli, pixelj] = np.array([-1,-1,-1])
             tmp.append([pixeli, pixelj])
         deletepixels.append(tmp)
-    
     return (img, deletepixels)
 
 def get_centered_pixel(patch, h):
+    patch2 = patch.flatten()
+    length = patch2.shape[0]
+    thirddim = int((length-h*h)/(h*h)+1)
+    patch2 = patch2.reshape(h,h,thirddim)
+    center = patch2[h//2, h//2]
+    return center
+
+def get_centered_pixel_2(patch, h):
     patch2 = patch.flatten()
     vector = patch2[((len(patch2)//2)-1):((len(patch2)//2)-1)+3]
     return [int(x) for x in vector]
