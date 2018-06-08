@@ -45,7 +45,7 @@ def get_patch(i,j,h,im):
 def flatpixel_to_2d(flatpixel, width): 
     x = flatpixel%width
     y = int((flatpixel - (flatpixel%width))/width)
-    return (x,y)
+    return [x,y]
     
 
 #return flatimg and pixels of noise_pixels in 2d
@@ -62,7 +62,8 @@ def noise(img_,prc,width,height, h):
         if((i-h >= 0) and (j-h >= 0) and (i+h+1 <= width) and (j+h+1 <= height)):
             #sinon on met du noise
             flatimg[pixeli] = np.array([-1,-1,-1])  #pixel bruité
-            noised_pixels.append(flatpixel_to_2d(pixeli,width))
+            x,y = flatpixel_to_2d(pixeli,width)
+            noised_pixels.append([x,y]) 
         else:
             #TODO gérer les bordures au lieu de juste les supprimer ?
             pass
@@ -149,3 +150,15 @@ def get_all_patches(img, h,width, height):
 
 def generate_patch():
     pass
+
+def spyral_transformation(a):
+    print(">",len(a.shape))
+    if(len(a.shape) != 3):
+        print("spyral_transformation(a): tab is not of 3 dimensions")
+        return a
+    out = []
+    while (a.size):
+        out.append(a[0])
+        a = np.rot90(np.delete(a, 0, 0))
+    res = np.concatenate(out) 
+    return res
