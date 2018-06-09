@@ -33,14 +33,67 @@ def display_im(im):
     plt.imshow(im2, interpolation='nearest')
     plt.show
     
+#extends an image by h pixels on all edges by mirroring on the edges
+def extend_image(im, h):
+    width  = im.shape[1]
+    height = im.shape[0]
+    newim = np.zeros((height+h*2, width+h*2, 3))
+    #print("origimg shape:", im.shape)
+    #print("newimg shape: ", newimg.shape)
+    
+    #copy original image in center
+    newim[h:height+h, h:width+h] = im
+    
+    #extract borders to paste
+    topborder    = np.array(im[0:h,:])
+    bottomborder = np.array(im[height-h:height,:])
+    
+    #on retourne en mirroir
+    topborder    = np.flipud(topborder)
+    bottomborder = np.flipud(bottomborder)
+    
+    #put all noised pixel to -2 so we don't try to correct these
+    topborder[topborder == -1] = -2   
+    bottomborder[bottomborder == -1] = -2
+    
+    #on ajoute les bordures sur l'image étendue
+    newim[0:h, h:width+h] = topborder
+    newim[height+h:height+h*2, h:width+h] = bottomborder
+    
+    #similaire pour gauche et droite
+    leftborder   = np.array(newim[:,h:h*2])
+    rightborder  = np.array(newim[:,width:width+h])
+    
+    leftborder   = np.fliplr(leftborder)
+    rightborder  = np.fliplr(rightborder)
+    
+    leftborder[leftborder == -1] = -2 
+    rightborder[rightborder == -1] = -2
+    
+    newim[:, 0:h] = leftborder
+    newim[:, height+h:height+h*2] = rightborder
+    
+    return newim;
+    
 #return a patch of size h centered on i,j from a matrice im 
-def get_patch(i,j,h,im):
-    #todo: gérer les bords, actuellement renvoi rien pour un bord
-
+#old version without extand_image()
+def get_patch(i,j,h,im):  
     if(h%2 == 0):
-        return im[(i-h//2):(i+h//2), (j-h//2):(j+h//2)]
+        print("get_patch() ERROR : le patch doit etre de taille impaire")
     else:
-        return im[(i-h//2):(i+h//2)+1, (j-h//2):(j+h//2)+1]
+        return im[(i-h//2):(i+h//2)+1, (j-h//2):(j+h//2)+1] 
+    
+#return a patch of size h centered on i,j from a matrice im 
+#new version 
+def get_patch2(i,j,h,im):
+    #on étend l'image pour gérer les bords
+    im2 = extend_image(im, h)
+    i2=i+h
+    j2=j+h
+    if(h%2 == 0):
+        print("get_patch() ERROR : le patch doit etre de taille impaire")
+    else:
+        return im2[(i2-h//2):(i2+h//2)+1, (j2-h//2):(j2+h//2)+1] 
 
 def flatpixel_to_2d(flatpixel, width): 
     x = flatpixel%width
@@ -49,6 +102,7 @@ def flatpixel_to_2d(flatpixel, width):
     
 
 #return flatimg and pixels of noise_pixels in 2d
+#noise() ne met pas de noise sur les bordures
 def noise(img_,prc,width,height, h):
     img=np.array(img_)
     #Noise a prc percent of the image img 
@@ -67,6 +121,23 @@ def noise(img_,prc,width,height, h):
         else:
             #TODO gérer les bordures au lieu de juste les supprimer ?
             pass
+    return (flatimg.reshape([img.shape[0], img.shape[1], 3]), np.array(noised_pixels))
+
+#noise2 met du noise sur les bordures
+def noise2(img_,prc,width,height, h):
+    img=np.array(img_)
+    #Noise a prc percent of the image img 
+    flatimg = img.reshape(-1, img.shape[-1])
+    flatimg = np.asarray(flatimg)
+    lenimg = len(flatimg)-1
+    randnoise = random.sample(range(0, lenimg), int(lenimg*prc))
+    noised_pixels = []
+    for pixeli in randnoise:
+        i,j = flatpixel_to_2d(pixeli,width)
+        #sinon on met du noise
+        flatimg[pixeli] = np.array([-1,-1,-1])  #pixel bruité
+        x,y = flatpixel_to_2d(pixeli,width)
+        noised_pixels.append([x,y]) 
     return (flatimg.reshape([img.shape[0], img.shape[1], 3]), np.array(noised_pixels))
 
 # i,j = first pixel (top left corner)
@@ -154,7 +225,7 @@ def generate_patch():
 def spyral_transformation(a):
     print(">",len(a.shape))
     if(len(a.shape) != 3):
-        print("spyral_transformation(a): tab is not of 3 dimensions")
+        print("spyral_transformation(a): tab is not of 3 dimensions, doing nothing")
         return a
     out = []
     while (a.size):
