@@ -16,7 +16,7 @@ def convert_rgb_to_hsv(img):
 
 #Display a matrice im from an image    
 def display_im(im):
-    im2=np.array(im)   
+    im2=np.copy(im)   
     width = im2.shape[0]
     height = im2.shape[1]
     #convert noisy pixel to a selected color
@@ -29,7 +29,7 @@ def display_im(im):
     im2 = np.array(im2)
     im2 = im2.astype(np.uint8)
 
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(10, 6))
     plt.imshow(im2, interpolation='nearest')
     plt.show
     
@@ -42,7 +42,7 @@ def extend_image(im, h):
     #print("newimg shape: ", newimg.shape)
     
     #copy original image in center
-    newim[h:height+h, h:width+h] = im
+    newim[h:height+h, h:width+h] = np.array(im)
     
     #extract borders to paste
     topborder    = np.array(im[0:h,:])
@@ -71,23 +71,25 @@ def extend_image(im, h):
     rightborder[rightborder == -1] = -2
     
     newim[:, 0:h] = leftborder
-    newim[:, height+h:height+h*2] = rightborder
+    newim[:, width+h:width+h*2] = rightborder
     
     return newim;
     
 #return a patch of size h centered on i,j from a matrice im 
 #old version without extand_image()
 def get_patch(i,j,h,im):  
+    im2=np.copy(im)
     if(h%2 == 0):
         print("get_patch() ERROR : le patch doit etre de taille impaire")
     else:
-        return im[(i-h//2):(i+h//2)+1, (j-h//2):(j+h//2)+1] 
+        return im2[(i-h//2):(i+h//2)+1, (j-h//2):(j+h//2)+1] 
     
 #return a patch of size h centered on i,j from a matrice im 
 #new version 
 def get_patch2(i,j,h,im):
     #on étend l'image pour gérer les bords
-    im2 = extend_image(im, h)
+    im2 = np.copy(im) #copie propre
+    im2 = np.array(extend_image(im2, h))
     i2=i+h
     j2=j+h
     if(h%2 == 0):
@@ -96,9 +98,18 @@ def get_patch2(i,j,h,im):
         return im2[(i2-h//2):(i2+h//2)+1, (j2-h//2):(j2+h//2)+1] 
 
 def flatpixel_to_2d(flatpixel, width): 
+    x = flatpixel//width
+    y = int(flatpixel - x * width)
+    return [x,y]
+
+"""
+#old
+
+def flatpixel_to_2d(flatpixel, width): 
     x = flatpixel%width
     y = int((flatpixel - (flatpixel%width))/width)
     return [x,y]
+"""
     
 
 #return flatimg and pixels of noise_pixels in 2d
@@ -125,7 +136,7 @@ def noise(img_,prc,width,height, h):
 
 #noise2 met du noise sur les bordures
 def noise2(img_,prc,width,height, h):
-    img=np.array(img_)
+    img=np.copy(img_)
     #Noise a prc percent of the image img 
     flatimg = img.reshape(-1, img.shape[-1])
     flatimg = np.asarray(flatimg)
@@ -134,6 +145,8 @@ def noise2(img_,prc,width,height, h):
     noised_pixels = []
     for pixeli in randnoise:
         i,j = flatpixel_to_2d(pixeli,width)
+        if((i<0) or (j<0) or (i > width+1) or (j > height+1)):
+            pass
         #sinon on met du noise
         flatimg[pixeli] = np.array([-1,-1,-1])  #pixel bruité
         x,y = flatpixel_to_2d(pixeli,width)
@@ -146,9 +159,9 @@ def delete_rect(img,i,j, width, height):
     #img[(i-height//2):(i+height//2)+1, (j-width//2):(j+width//2)+1] = np.zeros((height, width, 3))
     #todo optimiser sans boucles
     deletepixels = []
-    for pixeli in range(i, i+height):
+    for pixeli in range(i, i+width):
         tmp = []
-        for pixelj in range(j, j+width):
+        for pixelj in range(j, j+height):
             img[pixeli, pixelj] = np.array([-1,-1,-1])
             tmp.append([pixeli, pixelj])
         deletepixels.append(tmp)
@@ -183,9 +196,16 @@ def get_centered_pixel_2(patch, h):
 
 #testé ok
 def check_if_noisy_patch(patch, h):
+    """
     centerpixel = get_centered_pixel(patch, h) 
     #Check if center pixel is noisy in a patch
     if(np.array_equal(centerpixel, np.array([-1,-1,-1]))):
+        return True
+    return False
+    """
+    indexesnoise = np.where(patch == -1)[0] 
+    lennoise = len(indexesnoise)
+    if(lennoise > 0):
         return True
     return False
 
@@ -196,7 +216,7 @@ def get_patches(img, h, width, height):
     clean_patches = []
     for i_height in range(h//2, height-h//2,h):
         for j_width in range(h//2, width-h//2,h):
-            patch = get_patch(i_height, j_width, h, img)
+            patch = get_patch2(i_height, j_width, h, img)
             if(check_if_noisy_patch(patch,h)):
                 noisy_patches.append(patch)
             else:
@@ -223,7 +243,6 @@ def generate_patch():
     pass
 
 def spyral_transformation(a):
-    print(">",len(a.shape))
     if(len(a.shape) != 3):
         print("spyral_transformation(a): tab is not of 3 dimensions, doing nothing")
         return a
